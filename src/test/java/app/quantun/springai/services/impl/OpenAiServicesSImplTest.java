@@ -61,4 +61,11 @@ class OpenAiServicesSImplTest {
         Answer answer = openAiServicesS.getAnswerFromDatabaseMovies(new Question("Avengers"));
         assertTrue(answer.answer().contains("Avengers"));
     }
+
+    @Test
+    void getAdviceToBuyATruck() {
+
+        Answer answer = openAiServicesS.getAdviceToBuyATruck(new Question("Sportsman 212 boat"));
+        assertTrue(answer.answer().contains("3,458"));
+    }
 }

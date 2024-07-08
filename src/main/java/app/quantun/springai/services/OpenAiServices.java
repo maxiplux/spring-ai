@@ -13,4 +13,6 @@ public interface OpenAiServices {
     Answer getCapitalWithInfo(String stateOrCountry);
 
     Answer getAnswerFromDatabaseMovies(Question question);
+
+    Answer getAdviceToBuyATruck(Question question);
 }

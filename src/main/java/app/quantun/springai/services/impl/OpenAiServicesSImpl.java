@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.document.Document;
 
 import org.springframework.ai.chat.client.ChatClient;
@@ -16,6 +18,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,13 @@ public class OpenAiServicesSImpl implements OpenAiServices {
     @Value("classpath:/templates/rag-prompt-template.st")
     private Resource ressourceRagPromptTemplate;
 
+
+    @Value("classpath:/templates/system-message.st")
+    private Resource resourceSystemMessageTemplate;
+
+    @Value("classpath:/templates/rag-prompt-without-metadata-template.st")
+    private Resource resourceRagPromptWithoutMedataTemplate;
+
     @Value("classpath:templates/get-capital-prompt.st")
     private Resource resourceCapitalPromptTemplate;
 
@@ -44,7 +54,7 @@ public class OpenAiServicesSImpl implements OpenAiServices {
 
     private final ObjectMapper objectMapper;
 
-    final SimpleVectorStore vectorStore;
+    final VectorStore vectorStore;
 
     @Override
     public String getResponse(String message) {
@@ -117,5 +127,25 @@ public class OpenAiServicesSImpl implements OpenAiServices {
         return new Answer(response.getResult().getOutput().getContent());
     }
 
+
+    @Override
+    public Answer getAdviceToBuyATruck(Question question) {
+        PromptTemplate systemMessagePromptTemplate = new SystemPromptTemplate(resourceSystemMessageTemplate);
+        Message systemMessage = systemMessagePromptTemplate.createMessage();
+
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest
+                .query(question.question()).withTopK(TOP_FIVE_RECORDS_IN_VECTOR_DB));
+        List<String> contentList = documents.stream().map(Document::getContent).toList();
+
+        PromptTemplate promptTemplate = new PromptTemplate(resourceRagPromptWithoutMedataTemplate);
+        Message userMessage = promptTemplate.createMessage(Map.of("input", question.question(), "documents",
+                String.join("\n", contentList)));
+
+
+
+        ChatResponse response = chatClient.call(new Prompt(List.of(systemMessage, userMessage)));
+
+        return new Answer(response.getResult().getOutput().getContent());
+    }
 
 }
