@@ -63,6 +63,7 @@ class OpenAiServicesSImplTest {
     }
 
     @Test
+    @DisplayName("Get advice to buy a truck")
     void getAdviceToBuyATruck() {
 
         Answer answer = openAiServicesS.getAdviceToBuyATruck(new Question("Sportsman 212 boat"));
