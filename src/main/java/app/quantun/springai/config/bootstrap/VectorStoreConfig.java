@@ -5,6 +5,7 @@ import io.milvus.client.MilvusServiceClient;
 import io.milvus.param.ConnectParam;
 import io.milvus.param.IndexType;
 import io.milvus.param.MetricType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.ai.document.Document;
@@ -25,15 +26,16 @@ import java.util.List;
 
 @Configuration
 @Slf4j
+@RequiredArgsConstructor
 public class VectorStoreConfig  implements CommandLineRunner  {
 
-    @Autowired
-    VectorStore vectorStore;
+
+    private  final VectorStore vectorStore;
 
 
 
-    @Autowired
-    VectorStoreProperties vectorStoreProperties;
+
+    private  final VectorStoreProperties vectorStoreProperties;
 
 
 
