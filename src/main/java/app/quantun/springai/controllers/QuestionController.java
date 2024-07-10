@@ -14,20 +14,10 @@ public class QuestionController {
 
     private final OpenAiServices openAiServices;
 
-    @PostMapping("/question")
-    public Answer getResponse(String message) {
-        return openAiServices.getSimpleAnswerFromRandomQuestionString(message);
+    @PostMapping("/weather")
+    public Answer askQuestion(@RequestBody Question question) {
+        return openAiServices.getWeatherInformation(question);
     }
 
-
-    @PostMapping("/give-a-capital")
-    public Answer getCapitalOrState(String countryOrState) {
-        return openAiServices.getCapitalWithInfo(countryOrState);
-    }
-
-    @PostMapping("/give-info-movie")
-    public Answer getInfoMovie(@RequestBody Question question) {
-        return openAiServices.getAnswerFromDatabaseMovies(question);
-    }
 
 }

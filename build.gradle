@@ -40,6 +40,11 @@ dependencies {
 
 
 
+    //springdoc-openapi
+
+
+
+
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
     //spring-ai-tika-document-reader

@@ -18,33 +18,4 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class QuestionControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private OpenAiServices openAiServices;
-
-    @Test
-    void testGetResponse() throws Exception {
-        mockMvc.perform(post("/question")
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .content("Hello"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testGetCapitalOrState() throws Exception {
-        mockMvc.perform(post("/give-a-capital")
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .content("France"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void testGetInfoMovie() throws Exception {
-        mockMvc.perform(post("/give-info-movie")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"question\":\"Tell me about Inception.\"}"))
-                .andExpect(status().isOk());
-    }
 }

@@ -25,40 +25,14 @@ class OpenAiServicesSImplTest {
     void tearDown() {
     }
 
-    @Test
-    @DisplayName("Get response from openAI API")
-    void getResponse() {
-        String response = openAiServicesS.getResponse("Hello");
-        assertTrue(response.contains("?"));
 
-    }
 
     @Test
-    @DisplayName("Get answer a New data structure")
-    void getSimpleAnswerFromRandomQuestionString() {
-        Answer answer = openAiServicesS.getSimpleAnswerFromRandomQuestionString("1+1");
-        assertTrue(answer.answer().contains("2"));
-    }
+    @DisplayName("Test getWeatherInformation")
+    void getWeatherInformation() {
+        Question question = new Question("What is the weather in Tampa?");
 
-    @Test
-    @DisplayName("Get capital simple")
-    void getCapital() {
-        Answer answer = openAiServicesS.getCapital("Nigeria");
-        assertTrue(answer.answer().contains("Abuja"));
-    }
-
-    @Test
-    @DisplayName("Get capital with info")
-    void getCapitalWithInfo() {
-
-        Answer answer = openAiServicesS.getCapitalWithInfo("Nigeria");
-        assertTrue(answer.answer().contains("Abuja"));
-    }
-
-    @Test
-    @DisplayName("Get answer from a question using RAG")
-    void testGetAnswerFromMovieDatabase() {
-        Answer answer = openAiServicesS.getAnswerFromDatabaseMovies(new Question("Avengers"));
-        assertTrue(answer.answer().contains("Avengers"));
+        Answer answer = openAiServicesS.getWeatherInformation(question);
+        assertTrue(answer.answer().contains("Humidity"));
     }
 }
