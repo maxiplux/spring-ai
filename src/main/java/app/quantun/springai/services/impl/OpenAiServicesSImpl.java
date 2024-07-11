@@ -5,21 +5,38 @@ import app.quantun.springai.models.Question;
 import app.quantun.springai.services.OpenAiServices;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.ai.chat.messages.Media;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.document.Document;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.image.ImagePrompt;
+import org.springframework.ai.image.ImageResponse;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.OpenAiImageModel;
+import org.springframework.ai.openai.OpenAiImageOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+
+
+
+
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +62,8 @@ public class OpenAiServicesSImpl implements OpenAiServices {
     private final ObjectMapper objectMapper;
 
     final SimpleVectorStore vectorStore;
+
+    final OpenAiImageModel openaiImageModel;
 
     @Override
     public String getResponse(String message) {
@@ -115,6 +134,40 @@ public class OpenAiServicesSImpl implements OpenAiServices {
         ChatResponse response = chatClient.call(prompt);
 
         return new Answer(response.getResult().getOutput().getContent());
+    }
+
+    @Override
+    public String getImageDescrition(MultipartFile file) throws IOException {
+        OpenAiChatOptions chatOptions = OpenAiChatOptions.builder()
+                .withModel(OpenAiApi.ChatModel.GPT_4_O.getValue())
+                .build();
+
+        var userMessage = new UserMessage(
+                "Explain what do you see in this picture?", // content
+                List.of(new Media(MimeTypeUtils.IMAGE_JPEG, file.getBytes()))); // media
+
+        return chatClient.call(new Prompt(List.of(userMessage), chatOptions)).getResult().getOutput().toString();
+    }
+
+    @Override
+    public byte[] getImageFromQuestion(Question question) {
+        var options = OpenAiImageOptions.builder()
+                .withHeight(1024).withWidth(1792)
+                .withResponseFormat("b64_json")
+                .withModel("dall-e-3")
+                .withQuality("hd") //default standard
+                //.withStyle("natural") //default vivid
+                .build();
+
+        ImagePrompt imagePrompt = new ImagePrompt(question.question(), options);
+
+
+        ImageResponse imageResponse = openaiImageModel.call(imagePrompt);
+
+
+
+
+        return Base64.getDecoder().decode(imageResponse.getResult().getOutput().getB64Json());
     }
 
 
