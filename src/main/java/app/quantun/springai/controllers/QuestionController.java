@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -50,5 +51,31 @@ public class QuestionController {
     public byte[] getImage(@RequestBody Question question) {
         return openAiServices.getImageFromQuestion(question);
     }
+
+
+
+
+
+
+
+
+    @PostMapping(value = "/transcript-audio", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Map<String, String>> transcriptAudio(
+            @Validated @RequestParam("file") MultipartFile file,
+            @RequestParam("name") String name) {
+
+        Map<String, String> response = Map.of("response", this.openAiServices.getTranscript(file));
+
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value ="/talk", produces = "audio/mpeg")
+    public byte[] talkTalk(@RequestBody Question question) {
+        return this.openAiServices.getSpeech(question);
+    }
+
+
+
 
 }

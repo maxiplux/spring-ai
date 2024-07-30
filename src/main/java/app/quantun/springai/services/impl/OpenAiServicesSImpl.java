@@ -19,10 +19,15 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.image.ImageResponse;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiImageModel;
-import org.springframework.ai.openai.OpenAiImageOptions;
+import org.springframework.ai.openai.*;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.openai.api.OpenAiAudioApi;
+import org.springframework.ai.openai.audio.speech.SpeechPrompt;
+import org.springframework.ai.openai.audio.speech.SpeechResponse;
+import org.springframework.ai.openai.audio.transcription.AudioTranscription;
+
+import org.springframework.ai.openai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.openai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,27 +62,32 @@ public class OpenAiServicesSImpl implements OpenAiServices {
     @Value("classpath:templates/get-capital-with-info.st")
     private Resource resourceCapitalWithInfoPromptTemplate;
 
+
+    private final OpenAiAudioSpeechModel speechClient;
+    private final OpenAiAudioTranscriptionModel openAiTranscriptionClient;
+
+
     private  final ChatClient chatClient;
 
     private final ObjectMapper objectMapper;
 
-    final SimpleVectorStore vectorStore;
+    private final SimpleVectorStore vectorStore;
 
-    final OpenAiImageModel openaiImageModel;
+    private final OpenAiImageModel openaiImageModel;
 
     @Override
     public String getResponse(String message) {
         PromptTemplate promptTemplate = new PromptTemplate(message);
         Prompt prompt = promptTemplate.create();
 
-        return chatClient.call(prompt).getResult().getOutput().getContent();
+        return chatClient.prompt(prompt).call().content();
     }
 
     @Override
     public Answer getSimpleAnswerFromRandomQuestionString(String message) {
         PromptTemplate promptTemplate = new PromptTemplate(message);
         Prompt prompt = promptTemplate.create();
-        return new Answer(chatClient.call(prompt).getResult().getOutput().getContent());
+        return new Answer(chatClient.prompt(prompt).call().content()) ;
 
     }
 
@@ -86,7 +96,7 @@ public class OpenAiServicesSImpl implements OpenAiServices {
     public Answer getCapital(String stateOrCountry) {
         PromptTemplate promptTemplate = new PromptTemplate(resourceCapitalPromptTemplate);
         Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", stateOrCountry));
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
 
         String responseString;
 
@@ -109,7 +119,7 @@ public class OpenAiServicesSImpl implements OpenAiServices {
     public Answer getCapitalWithInfo(String stateOrCountry) {
         PromptTemplate promptTemplate = new PromptTemplate(this.resourceCapitalWithInfoPromptTemplate);
         Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", stateOrCountry));
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
 
         return new Answer(response.getResult().getOutput().getContent());
     }
@@ -131,7 +141,7 @@ public class OpenAiServicesSImpl implements OpenAiServices {
         // thankks to this promt, we can get the answer from the chat client, but using our dataset as a source of information
         // Chat gpt is not allucinating, it is using the data we provided to give us the answer
 
-        ChatResponse response = chatClient.call(prompt);
+        ChatResponse response = chatClient.prompt(prompt).call().chatResponse();
 
         return new Answer(response.getResult().getOutput().getContent());
     }
@@ -146,7 +156,7 @@ public class OpenAiServicesSImpl implements OpenAiServices {
                 "Explain what do you see in this picture?", // content
                 List.of(new Media(MimeTypeUtils.IMAGE_JPEG, file.getBytes()))); // media
 
-        return chatClient.call(new Prompt(List.of(userMessage), chatOptions)).getResult().getOutput().toString();
+        return chatClient.prompt(new Prompt(List.of(userMessage), chatOptions)).call().content();
     }
 
     @Override
@@ -168,6 +178,39 @@ public class OpenAiServicesSImpl implements OpenAiServices {
 
 
         return Base64.getDecoder().decode(imageResponse.getResult().getOutput().getB64Json());
+    }
+
+    @Override
+    public String getTranscript(MultipartFile file) {
+        OpenAiAudioTranscriptionOptions transcriptionOptions = OpenAiAudioTranscriptionOptions.builder()
+                .withResponseFormat(OpenAiAudioApi.TranscriptResponseFormat.JSON)
+                .withLanguage("en")
+                .withTemperature(0f)
+                .build();
+
+        AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(file.getResource(), transcriptionOptions);
+
+        AudioTranscriptionResponse response =  this.openAiTranscriptionClient.call(prompt);
+
+
+        return response.getResult().getOutput();
+    }
+
+    @Override
+    public byte[] getSpeech(Question question) {
+        OpenAiAudioSpeechOptions speechOptions = OpenAiAudioSpeechOptions.builder()
+                .withVoice(OpenAiAudioApi.SpeechRequest.Voice.ALLOY)
+                .withSpeed(1.0f)
+                .withResponseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
+                .withModel(OpenAiAudioApi.TtsModel.TTS_1.value)
+                .build();
+
+        SpeechPrompt speechPrompt = new SpeechPrompt(question.question(),
+                speechOptions);
+
+        SpeechResponse response = speechClient.call(speechPrompt);
+
+        return response.getResult().getOutput();
     }
 
 

@@ -20,4 +20,8 @@ public interface OpenAiServices {
     String getImageDescrition(MultipartFile file) throws IOException;
 
     byte[] getImageFromQuestion(Question question);
+
+    String getTranscript(MultipartFile file);
+
+    byte[] getSpeech(Question question);
 }
